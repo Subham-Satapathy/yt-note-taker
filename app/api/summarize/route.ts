@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { Innertube } from 'youtubei.js';
+import { auth } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -26,6 +28,36 @@ function extractVideoId(url: string): string | null {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await auth();
+    
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in to use this service.' },
+        { status: 401 }
+      );
+    }
+
+    // Check rate limit
+    const userId = session.user.id!;
+    const rateLimit = await checkRateLimit(userId, '/api/summarize');
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded. Please try again later.',
+          resetTime: rateLimit.resetTime.toISOString(),
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimit.resetTime.toISOString(),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { youtubeUrl, wordCount, includeNotes } = body;
 

@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface SummaryResult {
   title: string | null;
@@ -10,6 +13,8 @@ interface SummaryResult {
 }
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [wordCount, setWordCount] = useState(300);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +31,13 @@ export default function Home() {
     e.preventDefault();
     setError(null);
     setResult(null);
+
+    // Check if user is authenticated
+    if (!session) {
+      setError('Please sign in to use this service');
+      router.push('/auth/signin');
+      return;
+    }
 
     // Validation
     if (!youtubeUrl.trim()) {
@@ -56,6 +68,14 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setError('Please sign in to continue');
+          router.push('/auth/signin');
+          return;
+        }
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again later.');
+        }
         throw new Error(data.error || 'Failed to generate notes');
       }
 
@@ -70,6 +90,40 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
+        {/* Auth Header */}
+        <div className="flex justify-end mb-6">
+          {status === "loading" ? (
+            <div className="text-gray-400">Loading...</div>
+          ) : session ? (
+            <div className="flex items-center gap-4">
+              <span className="text-gray-300 text-sm">
+                {session.user?.name || session.user?.email}
+              </span>
+              <button
+                onClick={() => signOut()}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <Link
+                href="/auth/signin"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/signup"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
+
         {/* Hero Section - Problem Statement */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-4 py-2 rounded-full text-sm font-semibold mb-6">
