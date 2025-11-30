@@ -4,10 +4,12 @@ import { Innertube } from 'youtubei.js';
 import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialize OpenAI client to avoid build-time errors
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 // Extract video ID from YouTube URL
 function extractVideoId(url: string): string | null {
@@ -170,6 +172,7 @@ ${!includeNotes ? 'Note: Provide empty arrays for bulletPoints and actionItems.'
     // Call OpenAI API with GPT-4o-mini for best cost/performance balance
     // Cost: $0.150/1M input tokens, $0.600/1M output tokens
     // Context: 128k tokens, excellent quality
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
