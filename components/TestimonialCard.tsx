@@ -16,12 +16,7 @@ export default function TestimonialCard({ quote, author }: TestimonialCardProps)
       <p className="text-gray-600 mb-4">
         {quote}
       </p>
-      <div className="flex items-center">
-        <div className="w-10 h-10 bg-gray-200 rounded-full mr-3"></div>
-        <div>
-          <div className="font-semibold text-gray-900">{author}</div>
-        </div>
-      </div>
+      <div className="font-semibold text-gray-900">{author}</div>
     </div>
   );
 }
