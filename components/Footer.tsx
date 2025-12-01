@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-5 gap-8 mb-8">
           <div>
-            <h3 className="font-bold text-gray-900 mb-4">Logo</h3>
+            <h3 className="font-bold text-gray-900 mb-4">Snivv</h3>
           </div>
           
           <div>
