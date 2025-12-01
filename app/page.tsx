@@ -7,6 +7,7 @@ import StepCard from '@/components/StepCard';
 import TestimonialCard from '@/components/TestimonialCard';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 
 export default function Home() {
@@ -20,26 +21,30 @@ export default function Home() {
       {/* Features Grid */}
       <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <FeatureCard 
               stepNumber="01 — Paste link"
               title="Drop your YouTube link and let it work"
               description="Just paste your link. Our YouTube link parser grabs the video. That's all you need to start."
+              imageSrc="/undraw_share-link_y9oh.svg"
             />
             <FeatureCard 
               stepNumber="02 — Fast output"
               title="Choose how much detail you need"
               description="Select from 50, 150, or 300 words. Get exactly the depth you want—no more or less."
+              imageSrc="/undraw_add-information_06qr.svg"
             />
             <FeatureCard 
               stepNumber="03 — Get output"
               title="Receive your summary in seconds"
               description="Instant, AI-based summaries. Designed for students, 10x developers, and busy creators."
+              imageSrc="/undraw_personal-file_81l0.svg"
             />
             <FeatureCard 
               stepNumber="04 — Get output"
               title="Get bullet points and key takeaways"
               description="Read action points. Structured, bite-sized notes you can act on—complete with key takeaways."
+              imageSrc="/undraw_pin-to-board_eoie.svg"
             />
           </div>
         </div>
@@ -56,16 +61,19 @@ export default function Home() {
               stepNumber={1}
               title="Paste the YouTube video link"
               description="Copy and paste any YouTube URL into the input field."
+              imageSrc="/undraw_share-link_y9oh.svg"
             />
             <StepCard 
               stepNumber={2}
               title="Select your summary length"
               description="Choose between short, medium, or detailed summaries."
+              imageSrc="/undraw_select-option_a16s.svg"
             />
             <StepCard 
               stepNumber={3}
               title="Get your summary instantly"
               description="Receive a comprehensive AI-generated summary in seconds."
+              imageSrc="/undraw_speed-test_wdyh.svg"
             />
           </div>
         </div>
@@ -79,14 +87,17 @@ export default function Home() {
             Trusted users and real-time statistics
           </p>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-              <svg className="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="rounded-lg flex items-center justify-center relative h-96">
+              <Image 
+                src="/undraw_playlist_lwhi.svg" 
+                alt="Numbers that speak" 
+                fill
+                className="object-contain"
+              />
             </div>
             
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div className="bg-gray-50 rounded-lg p-8">
                 <div className="text-5xl font-bold text-gray-900 mb-2">50K</div>
                 <div className="text-gray-600 font-medium">Videos summarized</div>
@@ -135,11 +146,9 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Start summarizing videos today
-          </h2>
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">Ready to get started?</h2>
           <p className="text-lg text-gray-300 mb-8">
             Drop any link. Choose your length. Get instant notes. No signup required for your first try.
           </p>
