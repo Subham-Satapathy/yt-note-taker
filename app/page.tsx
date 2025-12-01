@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import TypewriterText from '@/components/TypewriterText';
 
 interface SummaryResult {
   title: string | null;
@@ -20,6 +21,9 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SummaryResult | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showBullets, setShowBullets] = useState(false);
+  const [showActions, setShowActions] = useState(false);
   const includeNotes = true; // Always include detailed notes
 
   const validateYoutubeUrl = (url: string): boolean => {
@@ -31,6 +35,9 @@ export default function Home() {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setShowSummary(false);
+    setShowBullets(false);
+    setShowActions(false);
 
     // Check if user is authenticated
     if (!session) {
@@ -80,6 +87,12 @@ export default function Home() {
       }
 
       setResult(data);
+      // Trigger all animations at once
+      setTimeout(() => {
+        setShowSummary(true);
+        setShowBullets(true);
+        setShowActions(true);
+      }, 300);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -88,15 +101,15 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <main className="min-h-screen bg-white dark:bg-gray-900 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         {/* Auth Header */}
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end mb-4">
           {status === "loading" ? (
             <div className="text-gray-400">Loading...</div>
           ) : session ? (
             <div className="flex items-center gap-4">
-              <span className="text-gray-300 text-sm">
+              <span className="text-gray-600 dark:text-gray-300 text-sm">
                 {session.user?.name || session.user?.email}
               </span>
               <button
@@ -110,7 +123,7 @@ export default function Home() {
             <div className="flex gap-3">
               <Link
                 href="/auth/signin"
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 Sign In
               </Link>
@@ -125,7 +138,7 @@ export default function Home() {
         </div>
 
         {/* Hero Section - Problem Statement */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-4 py-2 rounded-full text-sm font-semibold mb-6">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -177,12 +190,12 @@ export default function Home() {
         </div>
 
         {/* Input Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8 mb-8">
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Try It Now - Free!</h3>
-            <p className="text-gray-600 dark:text-gray-400">Paste any YouTube URL below</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+          <div className="text-center mb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Try It Now - Free!</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Paste any YouTube URL below</p>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             
             {/* URL Input */}
             <div>
@@ -261,95 +274,129 @@ export default function Home() {
           <div className="space-y-6">
             {/* Video Title */}
             {result.title && (
-              <div className="bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-8 border border-orange-100 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-red-600 rounded-lg">
-                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                     </svg>
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+                  <h2 className="text-xl md:text-2xl font-bold text-black dark:text-white leading-tight">
                     {result.title}
                   </h2>
                 </div>
               </div>
             )}
 
-            {/* Summary Section */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-8 border border-blue-100 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-600 rounded-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Summary */}
+              <div className={`transition-all duration-500 lg:sticky lg:top-6 lg:self-start ${
+                showSummary ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-black dark:text-white">
+                      Summary
+                    </h3>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Summary
-                  </h3>
+                  <span className="text-xs font-semibold bg-blue-600 text-white px-3 py-1 rounded-full">
+                    {wordCount} words
+                  </span>
                 </div>
-                <span className="text-xs font-semibold bg-blue-600 text-white px-4 py-2 rounded-full shadow-sm">
-                  {wordCount} words
-                </span>
+                <div className="border-l-4 border-blue-600 pl-6">
+                  {showSummary ? (
+                    <TypewriterText
+                      text={result.summary}
+                      speed={20}
+                      className="text-base text-black dark:text-gray-200 leading-relaxed whitespace-pre-wrap"
+                    />
+                  ) : (
+                    <div className="h-32 flex items-center justify-center">
+                      <div className="animate-pulse text-gray-400">Loading summary...</div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-base md:text-lg text-gray-800 dark:text-gray-200 leading-[1.8] space-y-1">
-                {result.summary}
-              </div>
-            </div>
 
-            {/* Key Notes Section */}
-            {result.bulletPoints && result.bulletPoints.length > 0 && (
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-8 border border-purple-100 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-purple-600 rounded-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Key Notes
-                  </h3>
-                </div>
-                <ul className="space-y-4">
-                  {result.bulletPoints.map((point, index) => (
-                    <li key={index} className="flex items-start group">
-                      <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-4 mt-0.5 group-hover:scale-110 transition-transform">
-                        {index + 1}
-                      </div>
-                      <span className="text-base text-gray-800 dark:text-gray-200 leading-relaxed">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Action Items Section */}
-            {result.actionItems && result.actionItems.length > 0 && (
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg p-8 border border-green-100 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-green-600 rounded-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Action Items & Questions
-                  </h3>
-                </div>
-                <ul className="space-y-4">
-                  {result.actionItems.map((item, index) => (
-                    <li key={index} className="flex items-start group">
-                      <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-md flex items-center justify-center mr-4 mt-0.5 group-hover:scale-110 transition-transform">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              {/* Right Column - Key Notes & Action Items */}
+              <div className="space-y-8">
+                {/* Key Notes Section */}
+                {result.bulletPoints && result.bulletPoints.length > 0 && (
+                  <div className={`transition-all duration-500 ${
+                    showBullets ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                         </svg>
                       </div>
-                      <span className="text-base text-gray-800 dark:text-gray-200 leading-relaxed">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                      <h3 className="text-xl font-bold text-black dark:text-white">
+                        Key Notes
+                      </h3>
+                    </div>
+                    <div className="space-y-3">
+                      {result.bulletPoints.map((point, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-start transition-all duration-500 ${
+                            showBullets ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                          }`}
+                          style={{ transitionDelay: `${index * 100}ms` }}
+                        >
+                          <div className="flex-shrink-0 w-7 h-7 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">
+                            {index + 1}
+                          </div>
+                          <span className="text-base text-black dark:text-gray-200 leading-relaxed">{point}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Items Section */}
+                {result.actionItems && result.actionItems.length > 0 && (
+                  <div className={`transition-all duration-500 ${
+                    showActions ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-bold text-black dark:text-white">
+                        Action Items & Questions
+                      </h3>
+                    </div>
+                    <div className="space-y-3">
+                      {result.actionItems.map((item, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-start transition-all duration-500 ${
+                            showActions ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                          }`}
+                          style={{ transitionDelay: `${index * 100}ms` }}
+                        >
+                          <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded flex items-center justify-center mr-3 mt-0.5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-base text-black dark:text-gray-200 leading-relaxed">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
