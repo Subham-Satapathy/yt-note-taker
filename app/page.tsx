@@ -135,17 +135,17 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Start summarizing videos today
+          </h2>
           <p className="text-lg text-gray-300 mb-8">
             Drop any link. Choose your length. Get instant notes. No signup required for your first try.
           </p>
           <div className="flex justify-center gap-4">
             <Link href={session ? "/summarize" : "/auth/signup"} className="px-8 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-gray-100">
               Get started
-            </Link>
-            <Link href="/summarize" className="px-8 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800">
-              Try it now
-            </Link>
-          </div>t started
             </Link>
             <Link href="/summarize" className="px-8 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800">
               Try it now
