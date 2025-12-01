@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 export default function HeroSection() {
+  const { data: session } = useSession();
+
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -13,7 +18,7 @@ export default function HeroSection() {
               Paste videos, get instant AI-powered summaries. Built for professionals, students, and content creators who value their time.
             </p>
             <div className="flex gap-4">
-              <Link href="/auth/signup" className="px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800">
+              <Link href={session ? "/summarize" : "/auth/signup"} className="px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800">
                 Get started
               </Link>
               <a href="#features" className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">

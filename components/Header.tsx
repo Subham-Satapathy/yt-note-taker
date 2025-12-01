@@ -27,7 +27,7 @@ export default function Header() {
               <>
                 <span className="text-sm text-gray-600">{session.user?.name || session.user?.email}</span>
                 <button
-                  onClick={() => signOut()}
+                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                   className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg"
                 >
                   Sign Out
