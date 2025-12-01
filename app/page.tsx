@@ -1,405 +1,155 @@
-'use client';
-
-import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import Header from '@/components/Header';
+import HeroSection from '@/components/HeroSection';
+import FeatureCard from '@/components/FeatureCard';
+import StepCard from '@/components/StepCard';
+import TestimonialCard from '@/components/TestimonialCard';
+import Footer from '@/components/Footer';
 import Link from 'next/link';
-import TypewriterText from '@/components/TypewriterText';
-
-interface SummaryResult {
-  title: string | null;
-  summary: string;
-  bulletPoints: string[];
-  actionItems?: string[];
-}
 
 export default function Home() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [wordCount, setWordCount] = useState(300);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<SummaryResult | null>(null);
-  const [showSummary, setShowSummary] = useState(false);
-  const [showBullets, setShowBullets] = useState(false);
-  const [showActions, setShowActions] = useState(false);
-  const includeNotes = true; // Always include detailed notes
-
-  const validateYoutubeUrl = (url: string): boolean => {
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)[\w-]+/;
-    return youtubeRegex.test(url);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setResult(null);
-    setShowSummary(false);
-    setShowBullets(false);
-    setShowActions(false);
-
-    // Check if user is authenticated
-    if (!session) {
-      setError('Please sign in to use this service');
-      router.push('/auth/signin');
-      return;
-    }
-
-    // Validation
-    if (!youtubeUrl.trim()) {
-      setError('Please enter a YouTube URL');
-      return;
-    }
-
-    if (!validateYoutubeUrl(youtubeUrl)) {
-      setError('Please enter a valid YouTube URL');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          youtubeUrl,
-          wordCount,
-          includeNotes,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Please sign in to continue');
-          router.push('/auth/signin');
-          return;
-        }
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please try again later.');
-        }
-        throw new Error(data.error || 'Failed to generate notes');
-      }
-
-      setResult(data);
-      // Trigger all animations at once
-      setTimeout(() => {
-        setShowSummary(true);
-        setShowBullets(true);
-        setShowActions(true);
-      }, 300);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Auth Header */}
-        <div className="flex justify-end mb-4">
-          {status === "loading" ? (
-            <div className="text-gray-400">Loading...</div>
-          ) : session ? (
-            <div className="flex items-center gap-4">
-              <span className="text-gray-600 dark:text-gray-300 text-sm">
-                {session.user?.name || session.user?.email}
-              </span>
-              <button
-                onClick={() => signOut()}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-3">
-              <Link
-                href="/auth/signin"
-                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                Sign Up
-              </Link>
-            </div>
-          )}
-        </div>
+    <main className="min-h-screen bg-gray-50">
+      <Header />
+      <HeroSection />
 
-        {/* Hero Section - Problem Statement */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-4 py-2 rounded-full text-sm font-semibold mb-6">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            The Problem
+      {/* Features Grid */}
+      <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <FeatureCard 
+              stepNumber="01 — Paste link"
+              title="Drop your YouTube link and let it work"
+              description="Just paste your link. Our YouTube link parser grabs the video. That's all you need to start."
+            />
+            <FeatureCard 
+              stepNumber="02 — Fast output"
+              title="Choose how much detail you need"
+              description="Select from 50, 150, or 300 words. Get exactly the depth you want—no more or less."
+            />
+            <FeatureCard 
+              stepNumber="03 — Get output"
+              title="Receive your summary in seconds"
+              description="Instant, AI-based summaries. Designed for students, 10x developers, and busy creators."
+            />
+            <FeatureCard 
+              stepNumber="04 — Get output"
+              title="Get bullet points and key takeaways"
+              description="Read action points. Structured, bite-sized notes you can act on—complete with key takeaways."
+            />
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 leading-tight">
-            Watching Hours of YouTube Videos?<br/>
-            <span className="text-red-600 dark:text-red-500">You're Wasting Precious Time.</span>
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Every day, valuable insights are trapped in lengthy videos. You spend hours watching, pausing, rewinding, 
-            trying to capture key points... <span className="font-semibold text-gray-800 dark:text-gray-200">only to forget them days later.</span>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">How it works</h2>
+          <p className="text-lg text-gray-600 mb-16">Three simple steps and you're done.</p>
+          
+          <div className="grid md:grid-cols-3 gap-12">
+            <StepCard 
+              stepNumber={1}
+              title="Paste the YouTube video link"
+              description="Copy and paste any YouTube URL into the input field."
+            />
+            <StepCard 
+              stepNumber={2}
+              title="Select your summary length"
+              description="Choose between short, medium, or detailed summaries."
+            />
+            <StepCard 
+              stepNumber={3}
+              title="Get your summary instantly"
+              description="Receive a comprehensive AI-generated summary in seconds."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Numbers that speak */}
+      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-gray-900 text-center mb-4">Numbers that speak</h2>
+          <p className="text-lg text-gray-600 text-center mb-16">
+            Trusted users and real-time statistics
           </p>
           
-          {/* Fear/Pain Points */}
-          <div className="grid md:grid-cols-3 gap-4 mb-10 max-w-3xl mx-auto">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <div className="text-3xl mb-2">⏰</div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Hours Lost Daily</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Time you'll never get back</p>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
+              <svg className="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <div className="text-3xl mb-2">🧠</div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Information Overload</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Too much to remember</p>
-            </div>
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <div className="text-3xl mb-2">📝</div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Messy Manual Notes</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Incomplete & unorganized</p>
-            </div>
-          </div>
-
-          {/* Solution */}
-          <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            The Solution
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Get AI-Powered Notes in <span className="text-green-600 dark:text-green-500">Seconds</span>
-          </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-10 max-w-2xl mx-auto">
-            Transform any YouTube video into comprehensive summaries and actionable notes instantly. 
-            Save hours, retain more, and never miss key insights again.
-          </p>
-        </div>
-
-        {/* Input Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <div className="text-center mb-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Try It Now - Free!</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Paste any YouTube URL below</p>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
             
-            {/* URL Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                YouTube URL
-              </label>
-              <input
-                type="text"
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                placeholder="https://youtube.com/watch?v=..."
-                className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Summary Length */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Summary Length
-              </label>
-              <div className="grid grid-cols-4 gap-3">
-                {[
-                  { value: 50, label: 'Short' },
-                  { value: 150, label: 'Brief' },
-                  { value: 300, label: 'Medium' },
-                  { value: 500, label: 'Long' },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setWordCount(option.value)}
-                    className={`py-3 px-4 rounded-xl text-sm font-medium transition ${
-                      wordCount === option.value
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
-                    disabled={isLoading}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            <div className="space-y-8">
+              <div className="bg-gray-50 rounded-lg p-8">
+                <div className="text-5xl font-bold text-gray-900 mb-2">50K</div>
+                <div className="text-gray-600 font-medium">Videos summarized</div>
+                <div className="text-sm text-gray-500">In the last month alone.</div>
               </div>
-            </div>
-
-            {/* Generate Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generating Notes...
-                </span>
-              ) : (
-                'Generate Notes'
-              )}
-            </button>
-          </form>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Result Display */}
-        {result && (
-          <div className="space-y-6">
-            {/* Video Title */}
-            {result.title && (
-              <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
-                    <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                    </svg>
-                  </div>
-                  <h2 className="text-xl md:text-2xl font-bold text-black dark:text-white leading-tight">
-                    {result.title}
-                  </h2>
-                </div>
+              
+              <div className="bg-gray-50 rounded-lg p-8">
+                <div className="text-5xl font-bold text-gray-900 mb-2">10K</div>
+                <div className="text-gray-600 font-medium">Active users</div>
+                <div className="text-sm text-gray-500">Students and pros saving time daily.</div>
               </div>
-            )}
-
-            {/* Two Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left Column - Summary */}
-              <div className={`transition-all duration-500 lg:sticky lg:top-6 lg:self-start ${
-                showSummary ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-bold text-black dark:text-white">
-                      Summary
-                    </h3>
-                  </div>
-                  <span className="text-xs font-semibold bg-blue-600 text-white px-3 py-1 rounded-full">
-                    {wordCount} words
-                  </span>
-                </div>
-                <div className="border-l-4 border-blue-600 pl-6">
-                  {showSummary ? (
-                    <TypewriterText
-                      text={result.summary}
-                      speed={20}
-                      className="text-base text-black dark:text-gray-200 leading-relaxed whitespace-pre-wrap"
-                    />
-                  ) : (
-                    <div className="h-32 flex items-center justify-center">
-                      <div className="animate-pulse text-gray-400">Loading summary...</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Column - Key Notes & Action Items */}
-              <div className="space-y-8">
-                {/* Key Notes Section */}
-                {result.bulletPoints && result.bulletPoints.length > 0 && (
-                  <div className={`transition-all duration-500 ${
-                    showBullets ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-bold text-black dark:text-white">
-                        Key Notes
-                      </h3>
-                    </div>
-                    <div className="space-y-3">
-                      {result.bulletPoints.map((point, index) => (
-                        <div
-                          key={index}
-                          className={`flex items-start transition-all duration-500 ${
-                            showBullets ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                          }`}
-                          style={{ transitionDelay: `${index * 100}ms` }}
-                        >
-                          <div className="flex-shrink-0 w-7 h-7 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">
-                            {index + 1}
-                          </div>
-                          <span className="text-base text-black dark:text-gray-200 leading-relaxed">{point}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Items Section */}
-                {result.actionItems && result.actionItems.length > 0 && (
-                  <div className={`transition-all duration-500 ${
-                    showActions ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-bold text-black dark:text-white">
-                        Action Items & Questions
-                      </h3>
-                    </div>
-                    <div className="space-y-3">
-                      {result.actionItems.map((item, index) => (
-                        <div
-                          key={index}
-                          className={`flex items-start transition-all duration-500 ${
-                            showActions ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                          }`}
-                          style={{ transitionDelay: `${index * 100}ms` }}
-                        >
-                          <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded flex items-center justify-center mr-3 mt-0.5">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                          <span className="text-base text-black dark:text-gray-200 leading-relaxed">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              
+              <div className="bg-gray-50 rounded-lg p-8">
+                <div className="text-5xl font-bold text-gray-900 mb-2">200K</div>
+                <div className="text-gray-600 font-medium">Hours saved</div>
+                <div className="text-sm text-gray-500">By not watching full videos.</div>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      </section>
+
+      {/* What users say */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-gray-900 text-center mb-4">What users say</h2>
+          <p className="text-lg text-gray-600 text-center mb-16">
+            Real feedback from our growing community
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <TestimonialCard 
+              quote="Saves me hours. I can now skim any lecture and stay on top without watching every video."
+              author="@Student"
+            />
+            <TestimonialCard 
+              quote="Perfect for research. I drop YouTube links from conferences and get the key talking points."
+              author="@Developer"
+            />
+            <TestimonialCard 
+              quote="Simple and fast. I don't need to worry if the video is worth my time—it just shows me everything."
+              author="@Creator"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Start summarizing videos today
+          </h2>
+          <p className="text-lg text-gray-300 mb-8">
+            Drop any link. Choose your length. Get instant notes. No signup required for your first try.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Link href="/auth/signup" className="px-8 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-gray-100">
+              Get started
+            </Link>
+            <Link href="/summarize" className="px-8 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800">
+              Try it now
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </main>
   );
 }
