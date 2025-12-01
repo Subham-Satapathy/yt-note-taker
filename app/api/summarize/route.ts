@@ -80,29 +80,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch transcript
+    // Fetch transcript and video metadata
     let transcriptText: string;
+    let videoMetadata: {
+      title: string;
+      description: string;
+      duration: number;
+      viewCount: string;
+      publishDate: string;
+      author: string;
+      category: string;
+    } | undefined;
+    
     try {
       const youtube = await Innertube.create();
       const info = await youtube.getInfo(videoId);
       
+      // Extract video metadata for enhanced context
+      videoMetadata = {
+        title: info.basic_info.title || 'Unknown Title',
+        description: info.basic_info.short_description || '',
+        duration: info.basic_info.duration || 0,
+        viewCount: info.basic_info.view_count?.toString() || '0',
+        publishDate: info.primary_info?.published?.toString() || '',
+        author: info.basic_info.author || 'Unknown',
+        category: info.basic_info.category || '',
+      };
+      
+      console.log('Video metadata extracted:', {
+        title: videoMetadata.title,
+        duration: videoMetadata.duration,
+        author: videoMetadata.author,
+      });
+      
       const transcriptData = await info.getTranscript();
       
       if (!transcriptData || !transcriptData.transcript) {
-        throw new Error('No transcript available');
+        throw new Error('NO_TRANSCRIPT');
       }
       
       const segments = transcriptData.transcript.content?.body?.initial_segments;
       
       if (!segments || segments.length === 0) {
-        throw new Error('Transcript segments are empty');
+        throw new Error('NO_TRANSCRIPT');
       }
       
-      transcriptText = segments
-        .map((segment: any) => segment.snippet?.text?.toString() || '')
+      // Build transcript with timestamps for better context
+      const transcriptWithTimestamps = segments
+        .map((segment: any) => {
+          const text = segment.snippet?.text?.toString() || '';
+          const startMs = segment.start_ms || 0;
+          const startTime = Math.floor(startMs / 1000);
+          const minutes = Math.floor(startTime / 60);
+          const seconds = startTime % 60;
+          const timestamp = `[${minutes}:${seconds.toString().padStart(2, '0')}]`;
+          return text.length > 0 ? `${timestamp} ${text}` : '';
+        })
         .filter((text: string) => text.length > 0)
         .join(' ')
         .trim();
+      
+      transcriptText = transcriptWithTimestamps;
       
       if (!transcriptText || transcriptText.length === 0) {
         throw new Error('Transcript text is empty');
@@ -110,10 +148,10 @@ export async function POST(request: NextRequest) {
       
       console.log('Transcript fetched successfully, length:', transcriptText.length);
       
-      // Truncate transcript based on model
-      // GPT-4o-mini: 128k context (use more)
-      // GPT-3.5-turbo: 16k context (use less)
-      const maxChars = 30000; // ~7500 tokens for GPT-4o-mini
+      // Increased context window for better quality
+      // GPT-4o-mini: 128k context window (~32k words)
+      // Using 60k chars (~15k tokens) for comprehensive analysis
+      const maxChars = 60000;
       if (transcriptText.length > maxChars) {
         transcriptText = transcriptText.substring(0, maxChars) + '... [transcript truncated due to length]';
         console.log('Transcript truncated to:', transcriptText.length, 'characters');
@@ -121,8 +159,39 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('Transcript error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Provide helpful, specific error messages
+      if (errorMessage === 'NO_TRANSCRIPT') {
+        return NextResponse.json(
+          { 
+            error: 'This video does not have captions or transcripts available.',
+            details: 'Transcripts are required to generate summaries. Please try a video that has:',
+            suggestions: [
+              'Auto-generated captions enabled by the creator',
+              'Manual captions/subtitles uploaded',
+              'Community-contributed subtitles (if available)',
+            ],
+            videoInfo: videoMetadata ? {
+              title: videoMetadata.title,
+              author: videoMetadata.author,
+            } : null,
+          },
+          { status: 400 }
+        );
+      }
+      
+      // Handle other transcript-related errors
       return NextResponse.json(
-        { error: `Could not fetch transcript: ${errorMessage}. The video may not have captions available or may be restricted.` },
+        { 
+          error: `Unable to fetch video transcript: ${errorMessage}`,
+          details: 'This could be due to:',
+          suggestions: [
+            'The video is age-restricted or private',
+            'The video has disabled captions',
+            'Geographic restrictions on the content',
+            'The video was recently uploaded and captions are still processing',
+          ],
+        },
         { status: 400 }
       );
     }
@@ -135,43 +204,79 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build prompt for OpenAI
-    const systemPrompt = `You are an expert at creating well-structured, readable summaries. Your writing style features consistent sentence lengths and proper formatting for optimal readability.`;
+    // Build enhanced prompt for OpenAI with video context
+    const systemPrompt = `You are an expert content analyst and technical writer specializing in creating comprehensive, well-structured summaries from video transcripts. Your summaries are known for their clarity, accuracy, and actionable insights. You pay attention to the video's context, purpose, and key messages to deliver maximum value to readers.`;
 
-    const userPrompt = `Analyze this YouTube video transcript and create a summary.
+    // Format duration for better context
+    const durationMinutes = Math.floor(videoMetadata.duration / 60);
+    const durationSeconds = videoMetadata.duration % 60;
+    const formattedDuration = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
 
-REQUIREMENTS:
-- Target length: ${wordCount} words
-- Write ONLY in short sentences (12-18 words maximum per sentence)
-- Each sentence should be roughly the same length
-- Use periods frequently to break up long thoughts
-- Never write run-on sentences
-- Add a line break after every 3-4 sentences for paragraph separation
-${includeNotes ? '- Include 5-8 key bullet points (each 8-15 words)' : ''}
-${includeNotes ? '- Include 2-4 action items (each 8-12 words)' : ''}
+    const userPrompt = `Analyze this YouTube video and create a comprehensive, accurate summary.
 
-WRITING STYLE EXAMPLE:
-"James explains how to add Google AdSense ads manually. He recommends avoiding automatic ad placement. This prevents layout disruption on websites. Users can create custom ad units instead."
+VIDEO INFORMATION:
+- Title: ${videoMetadata.title}
+- Author/Channel: ${videoMetadata.author}
+- Duration: ${formattedDuration}
+- Category: ${videoMetadata.category || 'General'}
+${videoMetadata.description ? `- Description: ${videoMetadata.description.substring(0, 500)}${videoMetadata.description.length > 500 ? '...' : ''}` : ''}
 
-NOT this style:
-"In this video, James from Seeker Host provides a detailed guide on how to add Google AdSense ads to your website manually, avoiding the automatic ad placement that can disrupt the layout."
+SUMMARY REQUIREMENTS:
+- Target length: ${wordCount} words (±10% is acceptable for completeness)
+- Write ONLY in short, clear sentences (12-18 words maximum per sentence)
+- Each sentence should be roughly the same length for better readability
+- Use periods frequently to break up complex thoughts into digestible chunks
+- Never write run-on sentences or overly complex structures
+- Separate the summary into 3-5 distinct, well-organized paragraphs using double line breaks
+- Each paragraph should focus on one main idea, theme, or topic from the video
+- Maintain the logical flow and structure of the original content
+- Preserve important details, examples, and explanations that add value
+- If the video includes timestamps or sections, respect that structure
+${includeNotes ? '- Include 5-10 key bullet points (each 8-15 words) capturing the most important takeaways' : ''}
+${includeNotes ? '- Include 2-5 actionable items (each 8-12 words) that viewers can implement' : ''}
 
-Transcript:
+CONTENT ANALYSIS GUIDELINES:
+1. Identify the main purpose and thesis of the video
+2. Extract key concepts, explanations, and examples
+3. Preserve technical terms, proper nouns, and specific recommendations
+4. Maintain the author's intended message and tone
+5. Focus on substance over filler content
+6. If steps or processes are explained, maintain their sequential order
+7. Highlight unique insights or lesser-known information
+
+WRITING STYLE (Short, Punchy Sentences):
+GOOD EXAMPLE:
+"The video explains manual Google AdSense implementation. James recommends avoiding automatic ad placement features. This prevents unwanted layout disruptions on websites. Users gain better control over ad positioning.
+
+Three main ad types are covered in detail. Display ads work well for most websites. Text ads blend naturally with written content. Link ads provide supplementary monetization options.
+
+Strategic ad placement improves overall user experience. Proper positioning can increase click-through rates significantly. Testing different layouts helps optimize ad performance. Regular monitoring ensures sustained revenue growth."
+
+BAD EXAMPLE (Avoid this):
+"In this comprehensive video tutorial, James from Seeker Host provides viewers with a detailed, step-by-step guide on how to effectively add Google AdSense ads to your website using the manual placement method, while also explaining why you should avoid the automatic ad placement feature that can sometimes disrupt the layout and user experience of your site."
+
+TRANSCRIPT WITH TIMESTAMPS:
 ${transcriptText}
 
-Return JSON format:
+OUTPUT FORMAT (Valid JSON):
 {
-  "title": "Short descriptive title (max 8 words)",
-  "summary": "Summary text with short, uniform sentences and paragraph breaks",
-  "bulletPoints": ["Short point 1", "Short point 2", ...],
-  "actionItems": ["Short action 1", "Short action 2", ...]
+  "title": "Concise, descriptive title capturing the video's main topic (max 10 words)",
+  "summary": "Paragraph 1 with short sentences here.\\n\\nParagraph 2 with short sentences here.\\n\\nParagraph 3 with short sentences here.",
+  "bulletPoints": ["Specific key point 1", "Specific key point 2", ...],
+  "actionItems": ["Concrete action step 1", "Concrete action step 2", ...]
 }
 
-${!includeNotes ? 'Note: Provide empty arrays for bulletPoints and actionItems.' : ''}`;
+CRITICAL: 
+- Use \\n\\n (double newline) to separate paragraphs in the summary field
+- Ensure all JSON is valid and properly escaped
+- Focus on accuracy and completeness over strict word count
+- Make the summary valuable and actionable for readers
+${!includeNotes ? '- Provide empty arrays for bulletPoints and actionItems since notes are not requested' : ''}`;
 
-    // Call OpenAI API with GPT-4o-mini for best cost/performance balance
+
+    // Call OpenAI API with GPT-4o-mini for optimal cost/performance/quality balance
     // Cost: $0.150/1M input tokens, $0.600/1M output tokens
-    // Context: 128k tokens, excellent quality
+    // Context: 128k tokens, excellent quality and reasoning
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -179,8 +284,11 @@ ${!includeNotes ? 'Note: Provide empty arrays for bulletPoints and actionItems.'
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.7,
+      temperature: 0.5, // Lower temperature for more focused, accurate summaries
+      max_tokens: 2000, // Explicit token limit for controlled output length
       response_format: { type: 'json_object' },
+      presence_penalty: 0.1, // Slight penalty to reduce repetition
+      frequency_penalty: 0.1, // Slight penalty for varied vocabulary
     });
 
     const responseText = completion.choices[0]?.message?.content;

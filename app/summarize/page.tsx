@@ -14,6 +14,16 @@ interface SummaryResult {
   actionItems?: string[];
 }
 
+interface ErrorResponse {
+  error: string;
+  details?: string;
+  suggestions?: string[];
+  videoInfo?: {
+    title: string;
+    author: string;
+  };
+}
+
 export default function SummarizePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -21,6 +31,7 @@ export default function SummarizePage() {
   const [wordCount, setWordCount] = useState(300);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<ErrorResponse | null>(null);
   const [result, setResult] = useState<SummaryResult | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [showBullets, setShowBullets] = useState(false);
@@ -52,6 +63,7 @@ export default function SummarizePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorDetails(null);
     setResult(null);
     setShowSummary(false);
     setShowBullets(false);
@@ -118,7 +130,15 @@ export default function SummarizePage() {
         if (response.status === 429) {
           throw new Error('Rate limit exceeded. Please try again later.');
         }
-        throw new Error(data.error || 'Failed to generate notes');
+        
+        // Handle detailed error responses
+        if (data.details || data.suggestions) {
+          setErrorDetails(data);
+          setError(data.error || 'Failed to generate notes');
+        } else {
+          throw new Error(data.error || 'Failed to generate notes');
+        }
+        return;
       }
 
       clearInterval(progressInterval);
@@ -156,30 +176,30 @@ export default function SummarizePage() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Summarize YouTube Videos</h1>
-          <p className="text-lg text-gray-600">Paste any YouTube URL and get instant AI-powered summaries</p>
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">Summarize YouTube Videos</h1>
+          <p className="text-base md:text-lg text-gray-600">Paste any YouTube URL and get instant AI-powered summaries</p>
         </div>
 
         {/* Input Form */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 max-w-4xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 mb-8 max-w-4xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-2 uppercase tracking-wide">
                 YouTube URL
               </label>
               <input
                 type="text"
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
-                placeholder="https://youtube.com/watch?v=..."
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition"
+                placeholder="https://youtu.be/T07GjYNkxrk?si=AKjIYM4sA-TT6t11"
+                className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none transition-all"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">
                 Summary Length
               </label>
               <div className="grid grid-cols-4 gap-3">
@@ -193,10 +213,10 @@ export default function SummarizePage() {
                     key={option.value}
                     type="button"
                     onClick={() => setWordCount(option.value)}
-                    className={`py-3 px-4 rounded-xl text-sm font-medium transition ${
+                    className={`py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                       wordCount === option.value
                         ? 'bg-gray-900 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-900 hover:bg-gray-50'
                     }`}
                     disabled={isLoading}
                   >
@@ -209,7 +229,7 @@ export default function SummarizePage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-semibold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl"
+              className="w-full bg-gray-900 hover:bg-black disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl transition-all shadow-md hover:shadow-lg"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -226,8 +246,46 @@ export default function SummarizePage() {
           </form>
 
           {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mt-6 p-4 md:p-5 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-semibold text-red-800">{error}</h3>
+                  
+                  {errorDetails && (
+                    <div className="mt-3 space-y-3">
+                      {errorDetails.videoInfo && (
+                        <div className="text-sm text-red-700 bg-red-100 p-3 rounded-lg">
+                          <p className="font-medium">Video: {errorDetails.videoInfo.title}</p>
+                          <p className="text-xs mt-1">By: {errorDetails.videoInfo.author}</p>
+                        </div>
+                      )}
+                      
+                      {errorDetails.details && (
+                        <p className="text-sm text-red-700 font-medium">{errorDetails.details}</p>
+                      )}
+                      
+                      {errorDetails.suggestions && errorDetails.suggestions.length > 0 && (
+                        <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                          {errorDetails.suggestions.map((suggestion, index) => (
+                            <li key={index}>{suggestion}</li>
+                          ))}
+                        </ul>
+                      )}
+                      
+                      <div className="mt-3 pt-3 border-t border-red-200">
+                        <p className="text-xs text-red-600">
+                          💡 Tip: Most videos with auto-generated captions will work. Try a different video or enable captions on your video.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
