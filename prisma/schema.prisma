@@ -88,6 +88,7 @@ model Summary {
   bulletPoints String[] @default([])
   actionItems  String[] @default([])
   wordCount    Int      @default(300)
+  mermaidCode  String?  @db.Text
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

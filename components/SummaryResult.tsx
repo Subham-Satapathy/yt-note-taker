@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import DiagramDisplay from './DiagramDisplay';
 
 interface SummaryResultProps {
   title: string | null;
@@ -11,6 +12,7 @@ interface SummaryResultProps {
   showSummary: boolean;
   showBullets: boolean;
   showActions: boolean;
+  mermaidCode?: string;
 }
 
 const LANGUAGES = {
@@ -45,6 +47,7 @@ export default function SummaryResult({
   showSummary,
   showBullets,
   showActions,
+  mermaidCode,
 }: SummaryResultProps) {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [translating, setTranslating] = useState(false);
@@ -68,7 +71,6 @@ export default function SummaryResult({
     setSelectedLanguage(language);
 
     try {
-      // Translate all content in parallel
       const [summaryResponse, bulletsResponse, actionsResponse] = await Promise.all([
         fetch('/api/translate', {
           method: 'POST',
@@ -138,30 +140,9 @@ export default function SummaryResult({
     }
   };
 
-  const copyAllContent = () => {
-    let content = '';
-    if (title) {
-      content += `${title}\n\n`;
-    }
-    content += `SUMMARY:\n${translatedSummary}\n\n`;
-    if (translatedBullets.length > 0) {
-      content += `KEY POINTS:\n`;
-      translatedBullets.forEach((point, index) => {
-        content += `${index + 1}. ${point}\n`;
-      });
-    }
-    if (translatedActions && translatedActions.length > 0) {
-      content += `\nACTION ITEMS:\n`;
-      translatedActions.forEach((item) => {
-        content += `→ ${item}\n`;
-      });
-    }
-    copyToClipboard(content, 'all');
-  };
-
   return (
     <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto">
-      {/* Action Bar with Language Selector and Copy All */}
+      {/* Action Bar with Language Selector and Buttons */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 md:p-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
@@ -199,28 +180,6 @@ export default function SummaryResult({
               </select>
             </div>
           </div>
-          
-          {/* Copy All Button */}
-          <button
-            onClick={copyAllContent}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            {copiedSection === 'all' ? (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Copied!
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy All
-              </>
-            )}
-          </button>
         </div>
         {translating && (
           <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
@@ -235,6 +194,17 @@ export default function SummaryResult({
 
       {/* Main Content Grid */}
       <div className="grid gap-6 md:gap-8">
+        {/* Diagram Section - Show before summary if available */}
+        {mermaidCode && (
+          <div
+            className={`transition-all duration-500 transform ${
+              showSummary ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+          >
+            <DiagramDisplay mermaidCode={mermaidCode} />
+          </div>
+        )}
+
         {/* Summary Section */}
         {showSummary && (
           <div

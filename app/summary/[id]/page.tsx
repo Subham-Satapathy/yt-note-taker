@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import DiagramDisplay from '@/components/DiagramDisplay';
 
 interface SummaryData {
   id: string;
@@ -18,6 +19,7 @@ interface SummaryData {
   actionItems: string[];
   wordCount: number;
   createdAt: string;
+  mermaidCode?: string;
 }
 
 const LANGUAGES = {
@@ -57,6 +59,7 @@ export default function SummaryDetailPage() {
   const [translatedBullets, setTranslatedBullets] = useState<string[]>([]);
   const [translatedActions, setTranslatedActions] = useState<string[]>([]);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [showDiagramModal, setShowDiagramModal] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -350,6 +353,15 @@ export default function SummaryDetailPage() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3 mb-8">
+              {/* <button
+                onClick={() => setShowDiagramModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Generate Diagram
+              </button> */}
               <Link
                 href={summary.videoUrl}
                 target="_blank"
@@ -457,6 +469,11 @@ export default function SummaryDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Diagram Section - Show before summary if available */}
+            {summary.mermaidCode && (
+              <DiagramDisplay mermaidCode={summary.mermaidCode} />
+            )}
 
             {/* Summary */}
             <div className="mb-8">

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { youtubeUrl, wordCount, includeNotes } = body;
+    const { youtubeUrl, wordCount, includeNotes, generateDiagram } = body;
 
     // Validate input
     if (!youtubeUrl) {
@@ -311,6 +311,45 @@ ${!includeNotes ? '- Provide empty arrays for bulletPoints and actionItems since
         : undefined,
     };
 
+    // Generate diagram if requested
+    let mermaidCode: string | undefined;
+    if (generateDiagram) {
+      try {
+        const openai = getOpenAIClient();
+        const diagramPrompt = `Based on the following content, create a Mermaid flowchart diagram that visualizes the main process, concepts, or workflow.
+
+Content:
+Summary: ${formattedResult.summary}
+Key Points: ${formattedResult.bulletPoints?.join(', ')}
+Action Items: ${formattedResult.actionItems?.join(', ')}
+
+Generate ONLY the Mermaid code for a flowchart. Use proper Mermaid flowchart syntax (graph TD/LR). Include the main concepts as nodes and show relationships with arrows. Keep it clear and logical.`;
+
+        const diagramCompletion = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert at creating visual diagrams using Mermaid syntax. Generate clean, well-structured Mermaid diagram code. Return ONLY the Mermaid code without any markdown code blocks or explanations.',
+            },
+            {
+              role: 'user',
+              content: diagramPrompt,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 1000,
+        });
+
+        mermaidCode = diagramCompletion.choices[0]?.message?.content || '';
+        // Clean up the response - remove markdown code blocks if present
+        mermaidCode = mermaidCode.replace(/```mermaid\n?/g, '').replace(/```\n?/g, '').trim();
+      } catch (diagramError) {
+        console.error('Failed to generate diagram:', diagramError);
+        // Continue without diagram if generation fails
+      }
+    }
+
     // Save summary to database
     try {
       await prisma.summary.create({
@@ -324,6 +363,7 @@ ${!includeNotes ? '- Provide empty arrays for bulletPoints and actionItems since
           bulletPoints: formattedResult.bulletPoints,
           actionItems: formattedResult.actionItems || [],
           wordCount: wordCount || 300,
+          mermaidCode: mermaidCode,
         },
       });
       console.log('Summary saved to database for user:', userId);
@@ -332,7 +372,10 @@ ${!includeNotes ? '- Provide empty arrays for bulletPoints and actionItems since
       // Continue even if saving fails - return the summary to the user
     }
 
-    return NextResponse.json(formattedResult);
+    return NextResponse.json({
+      ...formattedResult,
+      mermaidCode,
+    });
 
   } catch (error) {
     console.error('Error in summarize API:', error);

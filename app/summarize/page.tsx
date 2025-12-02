@@ -13,6 +13,7 @@ interface SummaryResult {
   summary: string;
   bulletPoints: string[];
   actionItems?: string[];
+  mermaidCode?: string;
 }
 
 interface ErrorResponse {
@@ -39,6 +40,7 @@ export default function SummarizePage() {
   const [showActions, setShowActions] = useState(false);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [generateDiagram, setGenerateDiagram] = useState(false);
   const includeNotes = true;
 
   const validateYoutubeUrl = (url: string): boolean => {
@@ -116,6 +118,7 @@ export default function SummarizePage() {
           youtubeUrl,
           wordCount,
           includeNotes,
+          generateDiagram,
         }),
       });
 
@@ -227,6 +230,20 @@ export default function SummarizePage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <input
+                type="checkbox"
+                id="generate-diagram"
+                checked={generateDiagram}
+                onChange={(e) => setGenerateDiagram(e.target.checked)}
+                className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+                disabled={isLoading}
+              />
+              <label htmlFor="generate-diagram" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Generate visual diagram (flowchart)
+              </label>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
@@ -302,6 +319,7 @@ export default function SummarizePage() {
             showSummary={showSummary}
             showBullets={showBullets}
             showActions={showActions}
+            mermaidCode={result.mermaidCode}
           />
         )}
 
