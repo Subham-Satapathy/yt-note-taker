@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { Innertube } from 'youtubei.js';
 import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { prisma } from '@/lib/prisma';
 
 // Lazy initialize OpenAI client to avoid build-time errors
 function getOpenAIClient() {
@@ -309,6 +310,27 @@ ${!includeNotes ? '- Provide empty arrays for bulletPoints and actionItems since
         ? result.actionItems 
         : undefined,
     };
+
+    // Save summary to database
+    try {
+      await prisma.summary.create({
+        data: {
+          userId: userId,
+          videoId: videoId,
+          videoUrl: youtubeUrl,
+          videoTitle: videoMetadata.title,
+          thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+          summary: formattedResult.summary,
+          bulletPoints: formattedResult.bulletPoints,
+          actionItems: formattedResult.actionItems || [],
+          wordCount: wordCount || 300,
+        },
+      });
+      console.log('Summary saved to database for user:', userId);
+    } catch (dbError) {
+      console.error('Failed to save summary to database:', dbError);
+      // Continue even if saving fails - return the summary to the user
+    }
 
     return NextResponse.json(formattedResult);
 

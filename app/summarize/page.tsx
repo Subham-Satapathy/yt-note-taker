@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import LoadingModal from '@/components/LoadingModal';
 import SummaryResult from '@/components/SummaryResult';
+import SummaryHistory from '@/components/SummaryHistory';
 
 interface SummaryResult {
   title: string | null;
@@ -302,6 +303,13 @@ export default function SummarizePage() {
             showBullets={showBullets}
             showActions={showActions}
           />
+        )}
+
+        {/* Summary History */}
+        {session && (
+          <div className="mt-8 max-w-4xl mx-auto">
+            <SummaryHistory />
+          </div>
         )}
       </div>
     </main>
