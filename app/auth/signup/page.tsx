@@ -62,7 +62,7 @@ export default function SignUpPage() {
         setError("Account created but sign in failed. Please try signing in manually.");
         setLoading(false);
       } else {
-        router.push("/");
+        router.push("/summarize");
         router.refresh();
       }
     } catch (err) {
@@ -72,7 +72,7 @@ export default function SignUpPage() {
   };
 
   const handleGoogleSignUp = () => {
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: "/summarize" });
   };
 
   return (

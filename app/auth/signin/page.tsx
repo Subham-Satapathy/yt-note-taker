@@ -30,7 +30,7 @@ export default function SignInPage() {
       if (result?.error) {
         setError("Invalid email or password");
       } else {
-        router.push("/");
+        router.push("/summarize");
         router.refresh();
       }
     } catch (err) {
@@ -41,7 +41,7 @@ export default function SignInPage() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: "/summarize" });
   };
 
   return (
