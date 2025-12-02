@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             </svg>
             Back to Home
           </Link>
-          <h1 className="text-5xl font-bold text-white mb-6">Snivv</h1>
+          <h1 className="text-5xl font-bold text-white mb-6">snivio</h1>
           <p className="text-gray-300 text-lg leading-relaxed">
             Transform any YouTube video into instant summaries and actionable notes. Save hours and never miss key insights again.
           </p>
